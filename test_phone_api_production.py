@@ -19,6 +19,15 @@ def test_health_endpoint_reports_service_status(client: TestClient) -> None:
     assert "mock_mode" in body
 
 
+def test_homepage_contains_search_ui(client: TestClient) -> None:
+    response = client.get("/")
+
+    assert response.status_code == 200
+    assert "Phone Specs Finder" in response.text
+    assert "/get-phone-details?phone_name=" in response.text
+    assert "result.textContent" in response.text
+
+
 def test_phone_alias_returns_curated_specifications(
     client: TestClient,
     monkeypatch: pytest.MonkeyPatch,

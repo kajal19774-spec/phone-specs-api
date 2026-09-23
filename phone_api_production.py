@@ -24,6 +24,7 @@ import httpx
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from fastapi.responses import HTMLResponse
 
 
 logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"))
@@ -239,6 +240,124 @@ if settings.cors_origins:
         allow_methods=["GET"],
         allow_headers=["*"],
     )
+
+
+@app.get("/", response_class=HTMLResponse, include_in_schema=False)
+async def home() -> str:
+    return """
+    <!doctype html>
+    <html lang="hi">
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      <title>Phone Specs Search</title>
+      <style>
+        :root {
+          color-scheme: light;
+          font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        }
+        body {
+          margin: 0;
+          min-height: 100vh;
+          display: grid;
+          place-items: center;
+          padding: 24px;
+          box-sizing: border-box;
+          background: #f4f4f9;
+          color: #1f2937;
+        }
+        main {
+          width: min(100%, 680px);
+          padding: 28px;
+          background: white;
+          border-radius: 14px;
+          box-shadow: 0 10px 30px rgba(15, 23, 42, 0.1);
+        }
+        h1 { margin-top: 0; }
+        form { display: flex; gap: 10px; }
+        input {
+          flex: 1;
+          min-width: 0;
+          padding: 12px;
+          font-size: 16px;
+          border: 1px solid #cbd5e1;
+          border-radius: 7px;
+        }
+        button {
+          padding: 12px 20px;
+          font-size: 16px;
+          color: white;
+          background: #2563eb;
+          border: 0;
+          border-radius: 7px;
+          cursor: pointer;
+        }
+        button:disabled { opacity: 0.65; cursor: wait; }
+        #result {
+          margin-top: 20px;
+          padding: 16px;
+          min-height: 24px;
+          overflow-x: auto;
+          white-space: pre-wrap;
+          background: #f8fafc;
+          border-radius: 8px;
+        }
+        .error { color: #b91c1c; }
+        @media (max-width: 520px) {
+          form { flex-direction: column; }
+        }
+      </style>
+    </head>
+    <body>
+      <main>
+        <h1>Phone Specs Finder</h1>
+        <p>फोन का नाम लिखकर specifications और product details खोजें।</p>
+        <form id="searchForm">
+          <input
+            id="phoneInput"
+            type="search"
+            placeholder="जैसे: Samsung Galaxy S24"
+            autocomplete="off"
+            required
+          >
+          <button id="searchButton" type="submit">Search</button>
+        </form>
+        <pre id="result" aria-live="polite"></pre>
+      </main>
+      <script>
+        const form = document.getElementById("searchForm");
+        const input = document.getElementById("phoneInput");
+        const button = document.getElementById("searchButton");
+        const result = document.getElementById("result");
+
+        form.addEventListener("submit", async (event) => {
+          event.preventDefault();
+          const phone = input.value.trim();
+          if (!phone) return;
+
+          button.disabled = true;
+          result.className = "";
+          result.textContent = "Searching...";
+          try {
+            const response = await fetch(
+              `/get-phone-details?phone_name=${encodeURIComponent(phone)}`
+            );
+            const data = await response.json();
+            if (!response.ok) {
+              throw new Error(data.detail || "Phone details could not be loaded.");
+            }
+            result.textContent = JSON.stringify(data, null, 2);
+          } catch (error) {
+            result.className = "error";
+            result.textContent = error.message || "Something went wrong.";
+          } finally {
+            button.disabled = false;
+          }
+        });
+      </script>
+    </body>
+    </html>
+    """
 
 
 @app.get("/health", tags=["system"])
