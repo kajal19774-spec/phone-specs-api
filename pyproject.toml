@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "phone-specs-api"
+version = "1.0.0"
+description = "FastAPI service for phone specifications and Flipkart product data"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.115,<1",
+    "httpx>=0.27,<1",
+    "uvicorn[standard]>=0.30,<1",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8,<9",
+]
+
+[tool.setuptools]
+py-modules = ["phone_api_production"]
+
+[tool.pytest.ini_options]
+testpaths = ["test_phone_api_production.py"]
+addopts = "-q"

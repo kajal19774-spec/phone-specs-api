@@ -1,0 +1,30 @@
+services:
+  phone-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: phone-specs-api:local
+    init: true
+    restart: unless-stopped
+    ports:
+      - "${PORT:-8000}:8000"
+    environment:
+      FLIPKART_AFFILIATE_ID: "${FLIPKART_AFFILIATE_ID:-}"
+      FLIPKART_AFFILIATE_TOKEN: "${FLIPKART_AFFILIATE_TOKEN:-}"
+      FLIPKART_API_URL: "${FLIPKART_API_URL:-https://affiliate-api.flipkart.net/affiliate/1.0/search.json}"
+      FLIPKART_TIMEOUT_SECONDS: "${FLIPKART_TIMEOUT_SECONDS:-8}"
+      CORS_ORIGINS: "${CORS_ORIGINS:-}"
+      LOG_LEVEL: "${LOG_LEVEL:-INFO}"
+      USE_MOCK_FLIPKART: "true"
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - >-
+          import urllib.request;
+          urllib.request.urlopen("http://127.0.0.1:8000/health", timeout=2)
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s

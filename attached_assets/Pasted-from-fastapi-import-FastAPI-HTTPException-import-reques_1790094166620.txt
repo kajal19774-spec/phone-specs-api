@@ -1,0 +1,65 @@
+from fastapi import FastAPI, HTTPException
+import requests
+
+app = FastAPI(title="Phone Specs & Flipkart API Server")
+
+# 1. Specs Database (प्रोसेसर, रैम आदि)
+PHONE_SPECS_DB = {
+    "samsung galaxy s24": {
+        "processor": "Snapdragon 8 Gen 3",
+        "ram_rom": "8GB / 12GB RAM | 256GB / 512GB ROM",
+        "display": "6.2 inch Dynamic AMOLED 2X, 120Hz",
+        "camera": "50 MP + 10 MP + 12 MP | 12 MP Front",
+        "battery": "4000 mAh (25W Fast)",
+        "os": "Android 14, One UI 6.1"
+    },
+    "redmi note 13 pro": {
+        "processor": "Snapdragon 7s Gen 2",
+        "ram_rom": "8GB / 12GB RAM | 128GB / 256GB ROM",
+        "display": "6.67 inch AMOLED, 120Hz",
+        "camera": "200 MP + 8 MP + 2 MP | 16 MP Front",
+        "battery": "5100 mAh (67W Fast)",
+        "os": "Android 13, MIUI 14"
+    }
+}
+
+# 2. Flipkart Data Fetcher Function
+def fetch_flipkart_data(search_query: str):
+    url = f"https://affiliate-api.flipkart.net/affiliate/1.0/search.json?query={search_query}&resultCount=1"
+    headers = {
+        "Fk-Affiliate-Id": "YOUR_FLIPKART_AFFILIATE_ID",
+        "Fk-Affiliate-Token": "YOUR_FLIPKART_AFFILIATE_TOKEN"
+    }
+    try:
+        # असली API जोड़ने के लिए इस लाइन का प्रयोग करें: response = requests.get(url, headers=headers).json()
+        return {
+            "title": search_query.title(),
+            "price": "₹79,999",
+            "image_url": "https://m.media-amazon.com/images/I/71RVuS3P24L._SL1500_.jpg",
+            "flipkart_buy_link": "https://www.flipkart.com/search?q=" + search_query
+        }
+    except Exception as e:
+        return None
+
+# 3. Merged API Endpoint
+@app.get("/get-phone-details")
+def get_phone_details(phone_name: str):
+    clean_name = phone_name.lower().strip()
+    fk_data = fetch_flipkart_data(clean_name)
+    if not fk_data:
+        raise HTTPException(status_code=404, detail="Flipkart data not found")
+        
+    specs = PHONE_SPECS_DB.get(clean_name, {
+        "processor": "N/A", "ram_rom": "N/A", "display": "N/A",
+        "camera": "N/A", "battery": "N/A", "os": "N/A"
+    })
+    
+    return {
+        "product_info": {
+            "name": fk_data["title"],
+            "live_price": fk_data["price"],
+            "image": fk_data["image_url"],
+            "buy_url": fk_data["flipkart_buy_link"]
+        },
+        "full_specifications": specs
+    }
